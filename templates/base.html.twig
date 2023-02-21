@@ -14,17 +14,18 @@
         <title>{% block title %} Series ! {% endblock %}</title>
 
     </head>
+
     <body>
     <div class="container">
         <header>
             <h1>
-                <a href="{{ path('main_home') }}"></a><img src="{{ asset('img/logo.svg') }}" alt="Series ! | Home"></a>
+                <a href="{{ path('main_home') }}"><img src="{{ asset('img/logo.svg') }}" alt="Series ! | Home"></a>
                 {% include 'menu/nav.html.twig' %}
             </h1>
         </header>
-
-        {% block body %}{% endblock %}
-
+            <main>
+                {% block body %}{% endblock %}
+            </main>
     <footer>
         {% include 'menu/nav.html.twig' %}
     </footer>
