@@ -22,7 +22,7 @@ class MainController extends AbstractController
     }
 
     /**
-     * @route("/test", name="main-test")
+     * @route("/test", name="main_test")
      */
     public function test(): Response
     {
