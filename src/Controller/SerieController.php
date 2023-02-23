@@ -3,9 +3,11 @@
 namespace App\Controller;
 
 use App\Entity\Serie;
+use App\Form\SerieType;
 use App\Repository\SerieRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
@@ -23,20 +25,26 @@ class SerieController extends AbstractController
         //TODO recupérer la liste des series en BDD
         //$series = instance de SerieRepository passé en attribut de la fonction
         //j'utilise la fonction findall() de cette instance
-        //$series = $serieRepository->findAll();
+        /*$series = $serieRepository->findAll();*/
 
         //j'utilise la fonction findby() qui prend en parametre un premiertableau de clé valeurs
         //un second optionel d'order by. + limit de offset
-        //$series = $serieRepository->findBy(["status"=>"ended"], ["popularity" =>'DESC'], 10, 10);
+        /*$series = $serieRepository->findBy(["status"=>"ended"], ["popularity" =>'DESC'], 10, 10);*/
 
         //exemple les 50 series les mieux notés
-        $series = $serieRepository->findBy([],["vote"=>"DESC"],50);
+        /*$series = $serieRepository->findBy([],["vote"=>"DESC"],50);*/
 
         //je donne en parametre la vue (fichier twig) que je renvois et/+
         //le tableau associatif qui renvois des données a la vue.
         //(nom de variable twig 'serie' / variable php $serie
+
+
+        //utilisation de la methode créé findBestSeries()
+        $series = $serieRepository->findBestSeries();
+
         return $this->render('serie/list.html.twig',[
             'series' => $series
+
         ]);
     }
 
@@ -65,11 +73,35 @@ class SerieController extends AbstractController
 
     #[Route('/add', name: 'add')]
     //je donne en parametre a ma fonction "entityManagerInterface pour pouvoir m'en servir a l'interieur
-    public function add(SerieRepository $serieRepository, EntityManagerInterface $entityManager): Response
+    public function add(SerieRepository $serieRepository, /*EntityManagerInterface $entityManager*/ Request $request): Response
     {
         $serie = new Serie();
 
-        $serie
+        //creation d'une instance de form lié a une instance de serie
+        $serieForm = $this->createForm(SerieType::class, $serie);
+
+        //méthode qui extrait les elements du dormulaire de la requete
+        $serieForm->handleRequest($request);
+
+
+
+        if($serieForm->isSubmitted()){
+
+            //set date de cration
+            /*$serie->setDateCreated(new \DateTime());*/
+
+            //sauvegarde en BDD
+            $serieRepository->save($serie, true);
+
+
+            $this->addFlash("success", "Serie added !");
+
+            //redirige vers la page de details de la serie
+            return $this->redirectToRoute('serie_show', ['id' => $serie->getId()]);
+        }
+
+
+        /*$serie
             ->setName("The Office")
             ->setBackdrop("backdrop.png")
             ->setDateCreated(new \DateTime())
@@ -102,18 +134,20 @@ class SerieController extends AbstractController
         $entityManager->flush();
 
         $serieRepository->remove($serie);
-        $serieRepository->remove($serie2);
+        $serieRepository->remove($serie2);*/
 
-       /*
+
         //enregistrement en BDD
-        $serieRepository->save($serie, true);//instance d'objet + boolean 'flush'
+        /*$serieRepository->save($serie, true);*///instance d'objet + boolean 'flush'
         //pour executer "true" la requete ou la sauvegarder "false" pour l'exectuer plus tard
 
-        $serie->setName("The last of us");
+        /*$serie->setName("The last of us");
         $serieRepository->save($serie, true);*/
 
 
         //TODO creer un forumlaire d'ajout de serie
-        return $this->render('serie/add.html.twig',);
+        return $this->render('serie/add.html.twig', [
+            'serieForm' => $serieForm->createView()
+        ]);
     }
 }

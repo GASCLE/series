@@ -1,7 +1,26 @@
 {% extends 'base.html.twig' %}
 
 {% block body %}
-    <h2> The newest series to add </h2>
+    <h2> newest series to add </h2>
+
+    {# déclanche l'affichage #}
+    {#{{ form(serieForm) }}#}
+
+    <div class="machin">
+        {# découpage par champ #}
+        {{ form_label(serieForm.name) }}
+        {{ form_widget(serieForm.name) }}
+        {{ form_errors(serieForm.name) }}
+    </div>
+
+    {# affichage du reste du form #}
+    {{ form_rest(serieForm) }}
+
+    <button>Add serie !</button>
+
+    {# fin du formulaire #}
+    {{ form_end(serieForm) }}
+
 {% endblock %}
 
 {% block title %}

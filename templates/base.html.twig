@@ -27,6 +27,13 @@
             </h1>
         </header>
             <main>
+                {# pr afficher les messages flash #}
+                {% for label, messages in app.flashes %}
+                {% for message in messages %}
+                <div class="flash flash-{{ label }}">
+                    {{ message }}
+
+
                 {% block body %}{% endblock %}
             </main>
     <footer>

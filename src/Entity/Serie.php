@@ -213,4 +213,10 @@ class Serie
 
         return $this;
     }
+
+    #[ORM\PrePersist]
+    public function setCreatedAtValue(): void
+    {
+        $this->setDateCreated(new \DateTime());
+    }
 }
