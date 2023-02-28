@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Serie;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -16,6 +17,9 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class SerieRepository extends ServiceEntityRepository
 {
+
+    const SERIE_LIMIT = 50;
+
     public function __construct(ManagerRegistry $registry)
     {
         parent::__construct($registry, Serie::class);
@@ -39,7 +43,18 @@ class SerieRepository extends ServiceEntityRepository
         }
     }
 
-    public function findBestSeries(){
+
+    //retour des series en fonction de parametres + pagination
+    public function findBestSeries(int $page){
+
+        //$limit = 50;
+
+        //page 1 -> 0 - 49
+        //page 2 -> 50 - 99
+
+        $offset = ($page - 1) * self::SERIE_LIMIT;
+
+
         //en DQL
         //récupération des series avec un vote > 8 et une popularité > 100
         //ordonné par popularité
@@ -53,20 +68,23 @@ class SerieRepository extends ServiceEntityRepository
         /*$query = $this->getEntityManager()->createQuery($dql);*/
 
 
-        //en DQL
+        //queryBuilder
         $qb = $this->createQueryBuilder('s');
         $qb
+            ->leftJoin("s.seasons", "sea") //inner join de serie et saison
+            ->addSelect("sea") //* sur serie, on lui demande de prendre AUSSI les attributs de saison
             ->addOrderBy('s.popularity', 'DESC')
-            ->andWhere('s.vote > 8')
-            ->andWhere('s.popularity > 100')
-            ->setMaxResults(50);
+            /*->andWhere('s.vote > 8')
+            ->andWhere('s.popularity > 100')*/
+            ->setFirstResult($offset)
+            ->setMaxResults(self::SERIE_LIMIT);
 
         $query = $qb->getQuery();
 
-        //ajoute une limite de résultat
-        $query->setMaxResults(50);
+        //permet de gerer les offsets avec jointure
+        $paginator = new Paginator($query);
 
-        return $query->getResult();
+        return $paginator;
 
 
 

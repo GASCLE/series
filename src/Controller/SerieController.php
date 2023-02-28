@@ -10,6 +10,7 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
+use function PHPUnit\Framework\throwException;
 
 //annotation de la class qui permet de mutualiser les informations
 #[Route('/serie', name:'serie_')]
@@ -19,13 +20,13 @@ class SerieController extends AbstractController
 
 
 
-    #[Route('/serie/list', name: 'list')]
-    public function list(SerieRepository $serieRepository): Response
+    #[Route('/list/{page}', name: 'list', requirements: ['page' => '\d+'], methods: "GET")]
+    public function list(SerieRepository $serieRepository, int $page = 1): Response
     {
         //TODO recupérer la liste des series en BDD
         //$series = instance de SerieRepository passé en attribut de la fonction
         //j'utilise la fonction findall() de cette instance
-        /*$series = $serieRepository->findAll();*/
+        $series = $serieRepository->findAll();
 
         //j'utilise la fonction findby() qui prend en parametre un premiertableau de clé valeurs
         //un second optionel d'order by. + limit de offset
@@ -38,12 +39,20 @@ class SerieController extends AbstractController
         //le tableau associatif qui renvois des données a la vue.
         //(nom de variable twig 'serie' / variable php $serie
 
+        $nbSerieMax = $serieRepository->count([]);
+        $maxPage = ceil($nbSerieMax / SerieRepository::SERIE_LIMIT);
 
-        //utilisation de la methode créé findBestSeries()
-        $series = $serieRepository->findBestSeries();
-
+        if ($page >= 1 && $page <= $maxPage){
+            //utilisation de la methode créé findBestSeries()
+            $series = $serieRepository->findBestSeries($page);
+        }else{
+            throw $this->createNotFoundException("Oops ! page not found !");
+        }
         return $this->render('serie/list.html.twig',[
-            'series' => $series
+            //on envoi les données a la vue
+            'series' => $series,
+            'currentPage' => $page,
+            'maxPage' => $maxPage,
 
         ]);
     }
@@ -72,9 +81,13 @@ class SerieController extends AbstractController
 
 
     #[Route('/add', name: 'add')]
+    #[IsGranted(["ROLE_USER"])]// je donne l'acces a cette route pour les roles USER
     //je donne en parametre a ma fonction "entityManagerInterface pour pouvoir m'en servir a l'interieur
     public function add(SerieRepository $serieRepository, /*EntityManagerInterface $entityManager*/ Request $request): Response
     {
+
+
+
         $serie = new Serie();
 
         //creation d'une instance de form lié a une instance de serie
@@ -85,7 +98,19 @@ class SerieController extends AbstractController
 
 
 
-        if($serieForm->isSubmitted()){
+        if($serieForm->isSubmitted() && $serieForm->isValid()){
+
+            //upload photo
+            /* @var UploadedFiles $file */
+
+            $file = $serieForm->get('poster')->getData();
+            //creation d'un nouveau nom
+            $newFileName = $serie->getName() . "-" . uniqid() . "." . $file->guessExtension();
+            //copie du fichier dans le répértoire de sauvegarde en le renommant
+            $file->move('img/posters/series', $newFileName);
+            //set le nouveau nom de la serie
+            $serie->setPoster($newFileName);
+
 
             //set date de cration
             /*$serie->setDateCreated(new \DateTime());*/
@@ -150,4 +175,23 @@ class SerieController extends AbstractController
             'serieForm' => $serieForm->createView()
         ]);
     }
+
+
+
+    #[Route('/remove/{id}', name: 'remove')]
+    public function remove(int $id, SerieRepository $serieRepository){
+        //récupération de la serie
+        $serie = $serieRepository->find($id);
+
+        if($serie) {
+            //je la supprime ou exception
+            $serieRepository->remove($serie);
+            $this->addFlash("warning", "Serie deleted !");
+        }else{
+            throw $this->createNotFoundException("This serie can't be deleted !");
+        }
+
+        return $this->redirectToRoute('serie_list');
+    }
+
 }

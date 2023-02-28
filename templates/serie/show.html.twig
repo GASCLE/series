@@ -3,6 +3,9 @@
 {% block body %}
     <h2> Serie's details</h2>
     <div class="serie-details">
+        <div class="flex_div">
+            <a class="link_button" href="">{{ path('serie_remove', {'id': serie.id}) }}</a>
+        </div>
         <div class="serie-poster">
             <img src="{{ asset('img/posters/series/' ~ serie.poster) }}" alt="{{ serie.name }}">
         </div>
@@ -13,6 +16,21 @@
             <div>Serie status : {{  serie.status }}</div>
             <div>Aired from : {{  serie.firstAirDate | date('Y-m-d') }} to {{ serie.lastAirDate | date('Y-m-d') }}</div>
             <div>{{ serie.overview | nl2br }}</div>
+            <section class="seasons">
+                <h3>Seasons !</h3>
+                {% for season in serie.seasons %}
+                    <article>
+                        <img src="{{ asset('img/posters/seasons/' ~ season.poster) }}" alt="{{ serie.name }} season {{ season.number }}">
+                        <div>
+                            <h4> Season #{{ season.number }}</h4>
+                            <div>
+                                {{ season.overview }}
+                            </div>
+                        </div>
+                    </article>
+                {% endfor %}
+
+            </section>
         </div>
     </div>
 {% endblock %}

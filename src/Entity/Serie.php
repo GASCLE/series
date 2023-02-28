@@ -3,10 +3,15 @@
 namespace App\Entity;
 
 use App\Repository\SerieRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
+use Symfony\Component\Validator\Constraints as Assert;//import pour les restrictions
+
 #[ORM\Entity(repositoryClass: SerieRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Serie
 {
     #[ORM\Id]
@@ -15,15 +20,19 @@ class Serie
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: "can not be empty")] //apporte des obligation/restriction graces aux methodes disponibles
+    #[Assert\Length(min: 2,max: 255, minMessage: "{{limit}} chars minimum")]
     private ?string $name = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $overview = null;
 
     #[ORM\Column(length: 50)]
+    #[Assert\Choice(["canceled", "ended", 'returning'])]
     private ?string $status = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 3, scale: 1)]
+    #[Assert\Range(notInRangeMessage: "out of bound",min : 2, max : 255)]
     private ?string $vote = null;
 
     #[ORM\Column(type: Types::DECIMAL, precision: 6, scale: 2)]
@@ -33,9 +42,13 @@ class Serie
     private ?string $genres = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Assert\GreaterThanOrEqual(propertyPath: "firstAirDate", message: "This date must be less than last air date")]
+    #[Assert\NotBlank(message: "can not be empty")]
     private ?\DateTimeInterface $firstAirDate = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
+    #[Assert\GreaterThanOrEqual(propertyPath: "firstAirDate", message: "This date must be greater than first air date")]
+    #[Assert\NotBlank(message: "can not be empty")]
     private ?\DateTimeInterface $lastAirDate = null;
 
     #[ORM\Column(length: 255)]
@@ -52,6 +65,14 @@ class Serie
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $dateModified = null;
+
+    #[ORM\OneToMany(mappedBy: 'serie', targetEntity: Season::class)]
+    private Collection $seasons;
+
+    public function __construct()
+    {
+        $this->seasons = new ArrayCollection();
+    }
 
     public function getId(): ?int
     {
@@ -135,7 +156,7 @@ class Serie
         return $this->firstAirDate;
     }
 
-    public function setFirstAirDate(\DateTimeInterface $firstAirDate): self
+    public function setFirstAirDate(?\DateTimeInterface $firstAirDate): self
     {
         $this->firstAirDate = $firstAirDate;
 
@@ -218,5 +239,35 @@ class Serie
     public function setCreatedAtValue(): void
     {
         $this->setDateCreated(new \DateTime());
+    }
+
+    /**
+     * @return Collection<int, Season>
+     */
+    public function getSeasons(): Collection
+    {
+        return $this->seasons;
+    }
+
+    public function addSeason(Season $season): self
+    {
+        if (!$this->seasons->contains($season)) {
+            $this->seasons->add($season);
+            $season->setSerie($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSeason(Season $season): self
+    {
+        if ($this->seasons->removeElement($season)) {
+            // set the owning side to null (unless already changed)
+            if ($season->getSerie() === $this) {
+                $season->setSerie(null);
+            }
+        }
+
+        return $this;
     }
 }

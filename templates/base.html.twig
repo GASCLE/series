@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="">
     <head>
         <meta charset="UTF-8">
 
@@ -32,8 +32,9 @@
                 {% for message in messages %}
                 <div class="flash flash-{{ label }}">
                     {{ message }}
-
-
+                </div>
+                {% endfor %}
+                {% endfor %}
                 {% block body %}{% endblock %}
             </main>
     <footer>

@@ -1,4 +1,5 @@
 {% extends 'base.html.twig' %}
+{% form_theme serieForm 'view/formTheme.html.twig' %}
 
 {% block body %}
     <h2> newest series to add </h2>
@@ -7,6 +8,7 @@
     {#{{ form(serieForm) }}#}
 
     <div class="machin">
+        {{ form_start(serieForm) }}
         {# découpage par champ #}
         {{ form_label(serieForm.name) }}
         {{ form_widget(serieForm.name) }}
