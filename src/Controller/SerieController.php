@@ -5,12 +5,14 @@ namespace App\Controller;
 use App\Entity\Serie;
 use App\Form\SerieType;
 use App\Repository\SerieRepository;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Utils\Uploader;
+use Sensio\Bundle\FrameworkExtraBundle\Configuration\IsGranted;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use function PHPUnit\Framework\throwException;
+
 
 //annotation de la class qui permet de mutualiser les informations
 #[Route('/serie', name:'serie_')]
@@ -81,9 +83,9 @@ class SerieController extends AbstractController
 
 
     #[Route('/add', name: 'add')]
-    #[IsGranted(["ROLE_USER"])]// je donne l'acces a cette route pour les roles USER
+    #[IsGranted("ROLE_USER")]// je donne l'acces a cette route pour les roles USER
     //je donne en parametre a ma fonction "entityManagerInterface pour pouvoir m'en servir a l'interieur
-    public function add(SerieRepository $serieRepository, /*EntityManagerInterface $entityManager*/ Request $request): Response
+    public function add(SerieRepository $serieRepository, /*EntityManagerInterface $entityManager*/ Request $request, Uploader $uploader): Response
     {
 
 
@@ -101,15 +103,18 @@ class SerieController extends AbstractController
         if($serieForm->isSubmitted() && $serieForm->isValid()){
 
             //upload photo
-            /* @var UploadedFiles $file */
+            /**
+             * @var UploadedFile $file
+             */
 
             $file = $serieForm->get('poster')->getData();
-            //creation d'un nouveau nom
-            $newFileName = $serie->getName() . "-" . uniqid() . "." . $file->guessExtension();
-            //copie du fichier dans le répértoire de sauvegarde en le renommant
-            $file->move('img/posters/series', $newFileName);
-            //set le nouveau nom de la serie
+            //appel de l'uploader
+            $newFileName = $uploader->upload($file, $this->getParameter('upload_serie_poster'),
+            $serie->getName());
+
+            //set le nouveau nom dans la serie
             $serie->setPoster($newFileName);
+
 
 
             //set date de cration
